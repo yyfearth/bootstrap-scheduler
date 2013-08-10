@@ -511,19 +511,19 @@
   margin-left: -5px;
   margin-right: -5px;
 }
-#scheduler {
+.scheduler {
   margin: 15px auto;
   width: 500px;
 }
-#scheduler #datepickers {
+.scheduler .datepickers {
   -webkit-user-select: none;
   -moz-user-select: moz-none;
   user-select: none;
 }
-#scheduler #datepickers > div {
+.scheduler .datepickers > div {
   display: inline-block;
 }
-#scheduler .day.drag,
-#scheduler .day.drag:hover {
+.scheduler .day.drag,
+.scheduler .day.drag:hover {
   background: #9cf;
 }
