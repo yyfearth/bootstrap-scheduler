@@ -652,7 +652,9 @@
 				}
 
 				clsName = $.unique(clsName);
-				html.push('<td class="'+clsName.join(' ')+'"' + (tooltip ? ' title="'+tooltip+'"' : '') + '>'+prevMonth.getUTCDate() + '</td>');
+				html.push('<td class="'+clsName.join(' ')+'"' + (tooltip ? ' title="'+tooltip+'"' : '') +
+                    'data-date-key="' + prevMonth.toISOString().slice(0, 10) + '"' + // by Wison
+                    '>'+prevMonth.getUTCDate() + '</td>');
 				if (prevMonth.getUTCDay() == this.o.weekEnd) {
 					html.push('</tr>');
 				}
@@ -728,7 +730,23 @@
 					break;
 			}
 		},
-
+        // Added by Wilson
+        go: function(dir) { // only accept 1 or -1
+            var dir = DPGlobal.modes[this.viewMode].navStep * dir;
+            switch(this.viewMode){
+                case 0:
+                    this.viewDate = this.moveMonth(this.viewDate, dir);
+                    this._trigger('changeMonth', this.viewDate);
+                    break;
+                case 1:
+                case 2:
+                    this.viewDate = this.moveYear(this.viewDate, dir);
+                    if (this.viewMode === 1)
+                        this._trigger('changeYear', this.viewDate);
+                    break;
+            }
+            this.fill();
+        },
 		click: function(e) {
 			e.preventDefault();
 			var target = $(e.target).closest('span, td, th');
