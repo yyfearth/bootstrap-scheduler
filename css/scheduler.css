@@ -564,3 +564,9 @@
 .scheduler .day.active.old.active {
   background-color: rgba(0, 51, 153, 0.4) \9;
 }
+.scheduler ul.date-list {
+  overflow-y: auto;
+  max-height: 150px;
+  list-style: disc inside;
+  margin-left: 5px;
+}

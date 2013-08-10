@@ -17,6 +17,9 @@ class Scheduler
     @left = @$left.data 'datepicker'
     @right = @$right.data 'datepicker'
 
+    @$list = @$el.find 'ul.date-list'
+    @$total = @$el.find '.total'
+
     @_disabled = {}
     @_selected = {}
 
@@ -126,6 +129,36 @@ class Scheduler
           el.addClass 'active'
         else
           el.removeClass 'active'
+
+    # show list
+    if @$list.is ':visible'
+      frag = document.createDocumentFragment()
+      formatDate = $.fn.datepicker.DPGlobal.formatDate
+      spanFrom = null
+      last = new Date 0
+
+      _append = (spanFrom, last) =>
+        if spanFrom
+          str = formatDate spanFrom, 'M dd, yyyy', 'en'
+          if spanFrom isnt last
+            str += ' ~ ' + formatDate last, 'M dd, yyyy', 'en'
+          $("<li>#{str}</li>").appendTo frag
+
+      selection = @getSelection()
+      count = selection.length
+      if count
+        @$total.text "(#{count} #{if count > 1 then 'days' else 'day'} selected)"
+        for date in selection
+          if date.getTime() - last.getTime() > DAY_SPAN
+            _append spanFrom, last
+            spanFrom = date
+          last = date
+        _append spanFrom, last
+      else
+        $("<li>(Empty)</li>").appendTo frag
+        @$total.empty()
+      @$list.empty().append frag
+    @
 
   toggleDate: (date) ->
     throw 'invalid date which is not a Date object' unless date instanceof Date

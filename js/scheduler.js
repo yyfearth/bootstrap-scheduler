@@ -23,6 +23,8 @@
       });
       this.left = this.$left.data('datepicker');
       this.right = this.$right.data('datepicker');
+      this.$list = this.$el.find('ul.date-list');
+      this.$total = this.$el.find('.total');
       this._disabled = {};
       this._selected = {};
       this._bind();
@@ -175,6 +177,41 @@
           }
         }
       });
+      if (this.$list.is(':visible')) {
+        frag = document.createDocumentFragment();
+        formatDate = $.fn.datepicker.DPGlobal.formatDate;
+        spanFrom = null;
+        last = new Date(0);
+        _append = function(spanFrom, last) {
+          var str;
+          if (spanFrom) {
+            str = formatDate(spanFrom, 'M dd, yyyy', 'en');
+            if (spanFrom !== last) {
+              str += ' ~ ' + formatDate(last, 'M dd, yyyy', 'en');
+            }
+            return $("<li>" + str + "</li>").appendTo(frag);
+          }
+        };
+        selection = this.getSelection();
+        count = selection.length;
+        if (count) {
+          this.$total.text("(" + count + " " + (count > 1 ? 'days' : 'day') + " selected)");
+          for (_i = 0, _len = selection.length; _i < _len; _i++) {
+            date = selection[_i];
+            if (date.getTime() - last.getTime() > DAY_SPAN) {
+              _append(spanFrom, last);
+              spanFrom = date;
+            }
+            last = date;
+          }
+          _append(spanFrom, last);
+        } else {
+          $("<li>(Empty)</li>").appendTo(frag);
+          this.$total.empty();
+        }
+        this.$list.empty().append(frag);
+      }
+      return this;
     };
 
     Scheduler.prototype.toggleDate = function(date) {
