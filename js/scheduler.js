@@ -103,22 +103,21 @@
       return date.toISOString().slice(0, 10);
     };
 
-    Scheduler.prototype._getTS = function(date) {
-      if (date.dataset != null) {
-        return new Date($.data(date, 'date-key')).getTime();
-      } else if (date instanceof Date) {
-        return date.getTime();
-      } else if (typeof date === 'number') {
-        return date;
-      } else {
-        return new Date(date).getTime();
-      }
-    };
-
     Scheduler.prototype._betweenDate = function(from, to, pass, func) {
-      var cur, p;
-      from = this._getTS(from);
-      to = this._getTS(to);
+      var cur, p, _getTS;
+      _getTS = function(date) {
+        if (date.dataset != null) {
+          return new Date($.data(date, 'date-key')).getTime();
+        } else if (date instanceof Date) {
+          return date.getTime();
+        } else if (typeof date === 'number') {
+          return date;
+        } else {
+          return new Date(date).getTime();
+        }
+      };
+      from = _getTS(from);
+      to = _getTS(to);
       if (from > to) {
         cur = to;
         to = from;

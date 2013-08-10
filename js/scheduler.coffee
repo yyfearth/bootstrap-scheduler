@@ -68,18 +68,18 @@ class Scheduler
   @
 
   _getDateKey: (date) -> date.toISOString()[0...10]
-  _getTS: (date) ->
-    if date.dataset?
-      new Date($.data date, 'date-key').getTime()
-    else if date instanceof Date
-      date.getTime()
-    else if typeof date is 'number'
-      date
-    else
-      new Date(date).getTime()
   _betweenDate: (from, to, pass, func) ->
-    from = @_getTS from
-    to = @_getTS to
+    _getTS = (date) ->
+      if date.dataset?
+        new Date($.data date, 'date-key').getTime()
+      else if date instanceof Date
+        date.getTime()
+      else if typeof date is 'number'
+        date
+      else
+        new Date(date).getTime()
+    from = _getTS from
+    to = _getTS to
     # switch
     if from > to
       cur = to
