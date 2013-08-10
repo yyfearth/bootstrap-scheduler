@@ -7,17 +7,22 @@
 
   Scheduler = (function() {
     function Scheduler(options) {
+      var opt;
       this.options = options != null ? options : {};
-      this.$el = $(this.options.el);
+      opt = this.options;
+      if (opt.selectableFromNow == null) {
+        opt.selectableFromNow = true;
+      }
+      this.$el = $(opt.el);
       if (!this.$el.length) {
-        throw 'cannot find el ' + this.options.el;
+        throw 'cannot find el ' + opt.el;
       }
       this.el = this.$el[0];
       this.$left = this.$el.find('.datepickers>.left');
       this.$right = this.$el.find('.datepickers>.right');
       console.log(this.el, this.$left.length, this.$right.length);
       this.$els = this.$left.add(this.$right).datepicker({
-        startDate: 'now',
+        startDate: opt.selectableFromNow ? 'now' : null,
         todayHighlight: true,
         keyboardNavigation: false
       });

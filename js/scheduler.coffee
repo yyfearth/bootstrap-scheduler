@@ -4,14 +4,16 @@ DAY_SPAN = 86400000
 
 class Scheduler
   constructor: (@options = {}) ->
-    @$el = $(@options.el)
-    throw 'cannot find el ' + @options.el unless @$el.length
+    opt = @options
+    opt.selectableFromNow ?= true
+    @$el = $(opt.el)
+    throw 'cannot find el ' + opt.el unless @$el.length
     @el = @$el[0]
     @$left = @$el.find('.datepickers>.left')
     @$right = @$el.find('.datepickers>.right')
     console.log @el, @$left.length, @$right.length
     @$els = @$left.add(@$right).datepicker
-      startDate: 'now'
+      startDate: if opt.selectableFromNow then 'now' else null
       todayHighlight: true
       keyboardNavigation: false
     @left = @$left.data 'datepicker'
