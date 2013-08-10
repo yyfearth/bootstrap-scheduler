@@ -1,6 +1,7 @@
 "use strict"
 
 DAY_SPAN = 86400000
+EVENT_DELAY = 60
 
 class Scheduler
   constructor: (@options = {}) ->
@@ -43,7 +44,6 @@ class Scheduler
         @showSelected e.target
       changeDate: (e) =>
         @toggleDate e.date
-        @showSelected()
         @showSelected e.target, 1
 
     dragging_start = null
@@ -59,13 +59,24 @@ class Scheduler
         @selectRange dragging_start, e.target, func.bind @
       dragging_start = null
       true
-    @$el.on 'mouseleave', =>
-      @highlight null
-      dragging_start = null
+    $(document.body).on 'mouseup', -> dragging_start = null
+    @$el.find('.datepickers').on 'mouseleave', =>
+      @highlight null if dragging_start
       true
     @$el.find('.btn-today').click => @go()
     @$el.find('.btn-clean').click => @clean()
-  @
+
+    _t = null
+    @$el.on 'change', =>
+      clearTimeout(_t) if _t
+      _t = setTimeout =>
+        _t = null
+        #console.log 'do update', Date.now()
+        @showSelected()
+        @_updateList()
+      , EVENT_DELAY
+
+    @
 
   _getDateKey: (date) -> date.toISOString()[0...10]
   _betweenDate: (from, to, pass, func) ->
@@ -103,7 +114,7 @@ class Scheduler
           cur += DAY_SPAN
       p
 
-  showSelected: (target, delay) ->
+  showSelected: (target, delay = EVENT_DELAY) ->
     unless target?
       @showSelected @$left[0], delay
       @showSelected @$right[0], delay
@@ -133,8 +144,9 @@ class Scheduler
           el.addClass 'active'
         else
           el.removeClass 'active'
+    @
 
-    # show list
+  _updateList: ->
     if @$list.is ':visible'
       frag = document.createDocumentFragment()
       formatDate = $.fn.datepicker.DPGlobal.formatDate
@@ -145,7 +157,11 @@ class Scheduler
         if spanFrom
           str = formatDate spanFrom, 'M dd, yyyy', 'en'
           if spanFrom isnt last
-            str += ' ~ ' + formatDate last, 'M dd, yyyy', 'en'
+            str_last = formatDate last, 'M dd, yyyy', 'en'
+            count = 1 + Math.round((last.getTime() - spanFrom.getTime()) / DAY_SPAN)
+            str += " ~ #{str_last} (#{count} days)"
+          else
+            str += ' (1 day)'
           $("<li>#{str}</li>").appendTo frag
 
       selection = @getSelection()
@@ -164,6 +180,8 @@ class Scheduler
       @$list.empty().append frag
     @
 
+  _changed: -> @$el.trigger 'change', @
+
   toggleDate: (date) ->
     throw 'invalid date which is not a Date object' unless date instanceof Date
     key = @_getDateKey date
@@ -173,6 +191,7 @@ class Scheduler
     else
       # add when not exits
       @_selected[key] = date
+    @_changed()
     @
   addDate: (date) ->
     throw 'invalid date which is not a Date object' unless date instanceof Date
@@ -181,17 +200,18 @@ class Scheduler
       console.warn 'date want to add is disabled ' + key
     else
       @_selected[key] = date
+    @_changed()
     @
   removeDate: (date) ->
     throw 'invalid date which is not a Date object' unless date instanceof Date
     key = @_getDateKey date
     delete @_selected[key]
+    @_changed()
     @
 
   selectRange: (from, to, addOrRemove = @addDate) ->
     @$els.find('.day.drag').removeClass('drag')
     @_betweenDate from, to, true, addOrRemove
-    @showSelected()
 
   getSelection: ->
     sel = @_selected
@@ -203,7 +223,7 @@ class Scheduler
     if selection
       selection = [selection] unless Array.isArray selection
       selection.forEach @addDate.bind @
-    @showSelected()
+    @_changed()
   clean: -> @setSelection()
 
   getDisabled: ->
@@ -216,7 +236,7 @@ class Scheduler
       disabled = [disabled] unless Array.isArray disabled
       for date in disabled
         @_disabled[@_getDateKey date] = date
-    @showSelected()
+    @_changed()
 
   go: (date = new Date) ->
     nextMonth = @right.moveMonth date, 1
