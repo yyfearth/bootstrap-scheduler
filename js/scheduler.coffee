@@ -1,7 +1,6 @@
 "use strict"
 
 class Scheduler
-  _selected: {}
   constructor: (@options = {}) ->
     @$el = $(@options.el)
     throw 'cannot find el ' + @options.el unless @$el.length
@@ -10,10 +9,15 @@ class Scheduler
     @$right = @$el.find('.datepickers>.right')
     console.log @el, @$left.length, @$right.length
     @$els = @$left.add(@$right).datepicker
+      startDate: 'now'
       todayHighlight: true
       keyboardNavigation: false
     @left = @$left.data 'datepicker'
     @right = @$right.data 'datepicker'
+
+    @_disabled = {}
+    @_selected = {}
+
     @_bind()
     @go()
 
@@ -38,8 +42,7 @@ class Scheduler
       dragging_start = @
       true
     @$els.on 'mouseenter', '.day', (e) =>
-      if dragging_start
-        @highlight dragging_start, e.target
+      @highlight dragging_start, e.target if dragging_start
       true
     @$els.on 'mouseup', '.day', (e) =>
       if dragging_start and dragging_start isnt e.target
@@ -110,11 +113,14 @@ class Scheduler
   _showSelected: (target) ->
     datepicker = $.data target, 'datepicker'
     _selected = @_selected
+    _disabled = @_disabled
     $(target).find('.day').each ->
       el = $(@)
       unless el.is('.disabled')
         key = el.data 'date-key'
-        if _selected.hasOwnProperty key
+        if _disabled.hasOwnProperty key
+          el.addClass 'disabled used'
+        else if _selected.hasOwnProperty key
           el.addClass 'active'
         else
           el.removeClass 'active'
@@ -128,14 +134,20 @@ class Scheduler
     else
       # add when not exits
       @_selected[key] = date
+    @
   addDate: (date) ->
     throw 'invalid date which is not a Date object' unless date instanceof Date
     key = @_getDateKey date
-    @_selected[key] = date
+    if @_disabled.hasOwnProperty key
+      console.warn 'date want to add is disabled ' + key
+    else
+      @_selected[key] = date
+    @
   removeDate: (date) ->
     throw 'invalid date which is not a Date object' unless date instanceof Date
     key = @_getDateKey date
     delete @_selected[key]
+    @
 
   selectRange: (from, to, addOrRemove = @addDate) ->
     @$els.find('.day.drag').removeClass('drag')
@@ -155,6 +167,18 @@ class Scheduler
     @showSelected()
   clean: -> @setSelection()
 
+  getDisabled: ->
+    disabled = @_disabled
+    Object.keys(disabled).map (key) -> disabled[key]
+
+  setDisabled: (disabled) ->
+    @_disabled = {}
+    if disabled
+      disabled = [disabled] unless Array.isArray disabled
+      for date in disabled
+        @_disabled[@_getDateKey date] = date
+    @showSelected()
+
   go: (date = new Date) ->
     nextMonth = @right.moveMonth date, 1
     @left.viewDate = date
@@ -170,5 +194,6 @@ class Scheduler
       q = @_betweenDate from, to, false, (date) ->
         ".day[data-date-key=#{_getDateKey date}]"
       @$els.find(q.join(',')).addClass('drag') if q.length
+    @
 
 window.schr = new Scheduler el: '.scheduler'

@@ -4,8 +4,6 @@
   var Scheduler;
 
   Scheduler = (function() {
-    Scheduler.prototype._selected = {};
-
     function Scheduler(options) {
       this.options = options != null ? options : {};
       this.$el = $(this.options.el);
@@ -17,11 +15,14 @@
       this.$right = this.$el.find('.datepickers>.right');
       console.log(this.el, this.$left.length, this.$right.length);
       this.$els = this.$left.add(this.$right).datepicker({
+        startDate: 'now',
         todayHighlight: true,
         keyboardNavigation: false
       });
       this.left = this.$left.data('datepicker');
       this.right = this.$right.data('datepicker');
+      this._disabled = {};
+      this._selected = {};
       this._bind();
       this.go();
     }
@@ -153,15 +154,18 @@
     };
 
     Scheduler.prototype._showSelected = function(target) {
-      var datepicker, _selected;
+      var datepicker, _disabled, _selected;
       datepicker = $.data(target, 'datepicker');
       _selected = this._selected;
+      _disabled = this._disabled;
       return $(target).find('.day').each(function() {
         var el, key;
         el = $(this);
         if (!el.is('.disabled')) {
           key = el.data('date-key');
-          if (_selected.hasOwnProperty(key)) {
+          if (_disabled.hasOwnProperty(key)) {
+            return el.addClass('disabled used');
+          } else if (_selected.hasOwnProperty(key)) {
             return el.addClass('active');
           } else {
             return el.removeClass('active');
@@ -177,10 +181,11 @@
       }
       key = this._getDateKey(date);
       if (this._selected.hasOwnProperty(key)) {
-        return delete this._selected[key];
+        delete this._selected[key];
       } else {
-        return this._selected[key] = date;
+        this._selected[key] = date;
       }
+      return this;
     };
 
     Scheduler.prototype.addDate = function(date) {
@@ -189,7 +194,12 @@
         throw 'invalid date which is not a Date object';
       }
       key = this._getDateKey(date);
-      return this._selected[key] = date;
+      if (this._disabled.hasOwnProperty(key)) {
+        console.warn('date want to add is disabled ' + key);
+      } else {
+        this._selected[key] = date;
+      }
+      return this;
     };
 
     Scheduler.prototype.removeDate = function(date) {
@@ -198,7 +208,8 @@
         throw 'invalid date which is not a Date object';
       }
       key = this._getDateKey(date);
-      return delete this._selected[key];
+      delete this._selected[key];
+      return this;
     };
 
     Scheduler.prototype.selectRange = function(from, to, addOrRemove) {
@@ -235,6 +246,29 @@
       return this.setSelection();
     };
 
+    Scheduler.prototype.getDisabled = function() {
+      var disabled;
+      disabled = this._disabled;
+      return Object.keys(disabled).map(function(key) {
+        return disabled[key];
+      });
+    };
+
+    Scheduler.prototype.setDisabled = function(disabled) {
+      var date, _i, _len;
+      this._disabled = {};
+      if (disabled) {
+        if (!Array.isArray(disabled)) {
+          disabled = [disabled];
+        }
+        for (_i = 0, _len = disabled.length; _i < _len; _i++) {
+          date = disabled[_i];
+          this._disabled[this._getDateKey(date)] = date;
+        }
+      }
+      return this.showSelected();
+    };
+
     Scheduler.prototype.go = function(date) {
       var nextMonth;
       if (date == null) {
@@ -257,9 +291,10 @@
           return ".day[data-date-key=" + (_getDateKey(date)) + "]";
         });
         if (q.length) {
-          return this.$els.find(q.join(',')).addClass('drag');
+          this.$els.find(q.join(',')).addClass('drag');
         }
       }
+      return this;
     };
 
     return Scheduler;

@@ -11,8 +11,11 @@
       display: inline-block;
     }
   }
-  .day.drag {
-    &, &:hover {
+  .day {
+    &.used {
+      text-decoration: line-through;
+    }
+    &.drag, &.drag:hover {
       background: #9cf;
     }
   }

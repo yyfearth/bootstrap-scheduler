@@ -523,6 +523,9 @@
 .scheduler .datepickers > div {
   display: inline-block;
 }
+.scheduler .day.used {
+  text-decoration: line-through;
+}
 .scheduler .day.drag,
 .scheduler .day.drag:hover {
   background: #9cf;
