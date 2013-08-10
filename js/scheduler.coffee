@@ -1,5 +1,7 @@
 "use strict"
 
+DAY_SPAN = 86400000
+
 class Scheduler
   constructor: (@options = {}) ->
     @$el = $(@options.el)
@@ -82,16 +84,16 @@ class Scheduler
       while cur <= to
         func new Date cur
         # next day
-        cur += 86400000
+        cur += DAY_SPAN
       null
     else
       p = []
-      if to - cur > 100000 # not same day
+      if to - cur >= DAY_SPAN # not same day
         # day loop
         while cur <= to
           p.push func new Date cur
           # next day
-          cur += 86400000
+          cur += DAY_SPAN
       p
 
   showSelected: (target, delay) ->
@@ -119,7 +121,7 @@ class Scheduler
       unless el.is('.disabled')
         key = el.data 'date-key'
         if _disabled.hasOwnProperty key
-          el.addClass 'disabled used'
+          el.addClass 'disabled selected'
         else if _selected.hasOwnProperty key
           el.addClass 'active'
         else

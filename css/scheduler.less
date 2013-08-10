@@ -12,11 +12,16 @@
     }
   }
   .day {
-    &.used {
+    &.disabled.selected {
       text-decoration: line-through;
     }
     &.drag, &.drag:hover {
       background: #9cf;
     }
+    &.active.new, &.active.old {
+      .buttonBackground(fadeout(@btnPrimaryBackground, 70%), fadeout(spin(@btnPrimaryBackground, 20), 60%));
+      color: #ccc;
+    }
+  }
   }
 }

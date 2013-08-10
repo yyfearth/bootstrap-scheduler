@@ -523,10 +523,44 @@
 .scheduler .datepickers > div {
   display: inline-block;
 }
-.scheduler .day.used {
+.scheduler .day.disabled.selected {
   text-decoration: line-through;
 }
 .scheduler .day.drag,
 .scheduler .day.drag:hover {
   background: #9cf;
+}
+.scheduler .day.active.new,
+.scheduler .day.active.old {
+  background-color: rgba(0, 105, 204, 0.3400000000000001);
+  background-image: -moz-linear-gradient(top, rgba(0, 136, 204, 0.30000000000000004), rgba(0, 68, 204, 0.4));
+  background-image: -ms-linear-gradient(top, rgba(0, 136, 204, 0.30000000000000004), rgba(0, 68, 204, 0.4));
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(rgba(0, 136, 204, 0.30000000000000004)), to(rgba(0, 68, 204, 0.4)));
+  background-image: -webkit-linear-gradient(top, rgba(0, 136, 204, 0.30000000000000004), rgba(0, 68, 204, 0.4));
+  background-image: -o-linear-gradient(top, rgba(0, 136, 204, 0.30000000000000004), rgba(0, 68, 204, 0.4));
+  background-image: linear-gradient(top, rgba(0, 136, 204, 0.30000000000000004), rgba(0, 68, 204, 0.4));
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='rgba(0, 136, 204, 0.30000000000000004)', endColorstr='rgba(0, 68, 204, 0.4)', GradientType=0);
+  border-color: rgba(0, 68, 204, 0.4) rgba(0, 68, 204, 0.4) rgba(0, 42, 128, 0.4);
+  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+  filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+  color: #ccc;
+}
+.scheduler .day.active.new:hover,
+.scheduler .day.active.old:hover,
+.scheduler .day.active.new:active,
+.scheduler .day.active.old:active,
+.scheduler .day.active.new.active,
+.scheduler .day.active.old.active,
+.scheduler .day.active.new.disabled,
+.scheduler .day.active.old.disabled,
+.scheduler .day.active.new[disabled],
+.scheduler .day.active.old[disabled] {
+  background-color: rgba(0, 68, 204, 0.4);
+}
+.scheduler .day.active.new:active,
+.scheduler .day.active.old:active,
+.scheduler .day.active.new.active,
+.scheduler .day.active.old.active {
+  background-color: rgba(0, 51, 153, 0.4) \9;
 }
