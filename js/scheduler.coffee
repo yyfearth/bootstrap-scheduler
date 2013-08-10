@@ -36,15 +36,21 @@ class Scheduler
     dragging_start = null
     @$els.on 'mousedown', '.day', ->
       dragging_start = @
+      true
     @$els.on 'mouseenter', '.day', (e) =>
       if dragging_start
         @highlight dragging_start, e.target
+      true
     @$els.on 'mouseup', '.day', (e) =>
       if dragging_start and dragging_start isnt e.target
         func = if e.altKey then @removeDate else @addDate
         @selectRange dragging_start, e.target, func.bind @
       dragging_start = null
-
+      true
+    @$el.on 'mouseleave', =>
+      @highlight null
+      dragging_start = null
+      true
     @$el.find('.btn-today').click => @go()
     @$el.find('.btn-clean').click => @clean()
   @
@@ -152,10 +158,11 @@ class Scheduler
 
   highlight: (from, to) ->
     @$els.find('.day.drag').removeClass('drag')
-    _getDateKey = @_getDateKey
-    q = @_betweenDate from, to, false, (date) ->
-      ".day[data-date-key=#{_getDateKey date}]"
-    @$els.find(q.join(',')).addClass('drag') if q.length
+    if from and to
+      _getDateKey = @_getDateKey
+      q = @_betweenDate from, to, false, (date) ->
+        ".day[data-date-key=#{_getDateKey date}]"
+      @$els.find(q.join(',')).addClass('drag') if q.length
 
   selectRange: (from, to, addOrRemove = @addDate) ->
     @$els.find('.day.drag').removeClass('drag')

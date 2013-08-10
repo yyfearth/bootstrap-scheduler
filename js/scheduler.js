@@ -51,12 +51,14 @@
       });
       dragging_start = null;
       this.$els.on('mousedown', '.day', function() {
-        return dragging_start = this;
+        dragging_start = this;
+        return true;
       });
       this.$els.on('mouseenter', '.day', function(e) {
         if (dragging_start) {
-          return _this.highlight(dragging_start, e.target);
+          _this.highlight(dragging_start, e.target);
         }
+        return true;
       });
       this.$els.on('mouseup', '.day', function(e) {
         var func;
@@ -64,7 +66,13 @@
           func = e.altKey ? _this.removeDate : _this.addDate;
           _this.selectRange(dragging_start, e.target, func.bind(_this));
         }
-        return dragging_start = null;
+        dragging_start = null;
+        return true;
+      });
+      this.$el.on('mouseleave', function() {
+        _this.highlight(null);
+        dragging_start = null;
+        return true;
       });
       this.$el.find('.btn-today').click(function() {
         return _this.go();
@@ -224,12 +232,14 @@
     Scheduler.prototype.highlight = function(from, to) {
       var q, _getDateKey;
       this.$els.find('.day.drag').removeClass('drag');
-      _getDateKey = this._getDateKey;
-      q = this._betweenDate(from, to, false, function(date) {
-        return ".day[data-date-key=" + (_getDateKey(date)) + "]";
-      });
-      if (q.length) {
-        return this.$els.find(q.join(',')).addClass('drag');
+      if (from && to) {
+        _getDateKey = this._getDateKey;
+        q = this._betweenDate(from, to, false, function(date) {
+          return ".day[data-date-key=" + (_getDateKey(date)) + "]";
+        });
+        if (q.length) {
+          return this.$els.find(q.join(',')).addClass('drag');
+        }
       }
     };
 
