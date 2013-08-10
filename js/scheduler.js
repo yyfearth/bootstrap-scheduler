@@ -128,16 +128,6 @@
       }
     };
 
-    Scheduler.prototype.getSelection = function() {
-      var sel;
-      sel = this._selected;
-      return Object.keys(sel).map(function(key) {
-        return sel[key];
-      }).sort(function(a, b) {
-        return a.getTime() - b.getTime();
-      });
-    };
-
     Scheduler.prototype.showSelected = function(target, delay) {
       var _t,
         _this = this;
@@ -211,6 +201,40 @@
       return delete this._selected[key];
     };
 
+    Scheduler.prototype.selectRange = function(from, to, addOrRemove) {
+      if (addOrRemove == null) {
+        addOrRemove = this.addDate;
+      }
+      this.$els.find('.day.drag').removeClass('drag');
+      this._betweenDate(from, to, true, addOrRemove);
+      return this.showSelected();
+    };
+
+    Scheduler.prototype.getSelection = function() {
+      var sel;
+      sel = this._selected;
+      return Object.keys(sel).map(function(key) {
+        return sel[key];
+      }).sort(function(a, b) {
+        return a.getTime() - b.getTime();
+      });
+    };
+
+    Scheduler.prototype.setSelection = function(selection) {
+      this._selected = {};
+      if (selection) {
+        if (!Array.isArray(selection)) {
+          selection = [selection];
+        }
+        selection.forEach(this.addDate.bind(this));
+      }
+      return this.showSelected();
+    };
+
+    Scheduler.prototype.clean = function() {
+      return this.setSelection();
+    };
+
     Scheduler.prototype.go = function(date) {
       var nextMonth;
       if (date == null) {
@@ -221,11 +245,6 @@
       this.right.viewDate = nextMonth;
       this.left.fill();
       this.right.fill();
-      return this.showSelected();
-    };
-
-    Scheduler.prototype.clean = function() {
-      this._selected = {};
       return this.showSelected();
     };
 
@@ -241,15 +260,6 @@
           return this.$els.find(q.join(',')).addClass('drag');
         }
       }
-    };
-
-    Scheduler.prototype.selectRange = function(from, to, addOrRemove) {
-      if (addOrRemove == null) {
-        addOrRemove = this.addDate;
-      }
-      this.$els.find('.day.drag').removeClass('drag');
-      this._betweenDate(from, to, true, addOrRemove);
-      return this.showSelected();
     };
 
     return Scheduler;

@@ -91,11 +91,6 @@ class Scheduler
           cur += 86400000
       p
 
-  getSelection: ->
-    sel = @_selected
-    Object.keys(sel).map((key) -> sel[key])
-      .sort((a, b) -> a.getTime() - b.getTime())
-
   showSelected: (target, delay) ->
     unless target?
       @showSelected @$left[0], delay
@@ -142,18 +137,30 @@ class Scheduler
     key = @_getDateKey date
     delete @_selected[key]
 
+  selectRange: (from, to, addOrRemove = @addDate) ->
+    @$els.find('.day.drag').removeClass('drag')
+    @_betweenDate from, to, true, addOrRemove
+    @showSelected()
+
+  getSelection: ->
+    sel = @_selected
+    Object.keys(sel).map((key) -> sel[key])
+      .sort((a, b) -> a.getTime() - b.getTime())
+
+  setSelection: (selection) ->
+    @_selected = {}
+    if selection
+      selection = [selection] unless Array.isArray selection
+      selection.forEach @addDate.bind @
+    @showSelected()
+  clean: -> @setSelection()
+
   go: (date = new Date) ->
     nextMonth = @right.moveMonth date, 1
     @left.viewDate = date
     @right.viewDate = nextMonth
     @left.fill()
     @right.fill()
-    #@left._trigger 'changeMonth', date
-    #@right._trigger 'changeMonth', nextMonth
-    @showSelected()
-
-  clean: ->
-    @_selected = {}
     @showSelected()
 
   highlight: (from, to) ->
@@ -163,10 +170,5 @@ class Scheduler
       q = @_betweenDate from, to, false, (date) ->
         ".day[data-date-key=#{_getDateKey date}]"
       @$els.find(q.join(',')).addClass('drag') if q.length
-
-  selectRange: (from, to, addOrRemove = @addDate) ->
-    @$els.find('.day.drag').removeClass('drag')
-    @_betweenDate from, to, true, addOrRemove
-    @showSelected()
 
 window.schr = new Scheduler el: '.scheduler'
