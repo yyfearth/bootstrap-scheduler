@@ -3,13 +3,11 @@
 .scheduler {
   margin: 15px auto;
   width: 500px;
-  .datepickers {
-    -webkit-user-select: none;
-    -moz-user-select: moz-none;
-    user-select: none;
-    > div {
-      display: inline-block;
-    }
+  -webkit-user-select: none;
+  -moz-user-select: moz-none;
+  user-select: none;
+  .datepickers > div {
+    display: inline-block;
   }
   .day {
     &.disabled.selected {
@@ -24,6 +22,9 @@
     }
   }
   ul.date-list {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
     overflow-y: auto;
     max-height: 150px;
     list-style: disc inside;
