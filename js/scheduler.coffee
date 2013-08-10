@@ -11,7 +11,6 @@ class Scheduler
     @el = @$el[0]
     @$left = @$el.find('.datepickers>.left')
     @$right = @$el.find('.datepickers>.right')
-    console.log @el, @$left.length, @$right.length
     @$els = @$left.add(@$right).datepicker
       startDate: if opt.selectableFromNow then 'now' else null
       todayHighlight: true
@@ -26,7 +25,10 @@ class Scheduler
     @_selected = {}
 
     @_bind()
-    @go()
+
+    @setSelection opt.selection if opt.selection
+    @setDisabled opt.disabled if opt.disabled
+    @go opt.viewDate
 
   _bind: ->
     @$els.on 'mousewheel DOMMouseScroll', (e) ->

@@ -20,7 +20,6 @@
       this.el = this.$el[0];
       this.$left = this.$el.find('.datepickers>.left');
       this.$right = this.$el.find('.datepickers>.right');
-      console.log(this.el, this.$left.length, this.$right.length);
       this.$els = this.$left.add(this.$right).datepicker({
         startDate: opt.selectableFromNow ? 'now' : null,
         todayHighlight: true,
@@ -33,7 +32,13 @@
       this._disabled = {};
       this._selected = {};
       this._bind();
-      this.go();
+      if (opt.selection) {
+        this.setSelection(opt.selection);
+      }
+      if (opt.disabled) {
+        this.setDisabled(opt.disabled);
+      }
+      this.go(opt.viewDate);
     }
 
     Scheduler.prototype._bind = function() {
