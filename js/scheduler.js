@@ -553,6 +553,11 @@
     el: '.scheduler'
   });
 
+  $('.btn-select').click(function() {
+    console.log('dates', schr.getDateStrings(), schr.getDates());
+    return console.log('hours', schr.getHours());
+  });
+
 }).call(this);
 
 /*

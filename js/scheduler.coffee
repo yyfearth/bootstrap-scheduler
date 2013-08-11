@@ -363,4 +363,8 @@ class Scheduler
       @$els.find(q.join(',')).addClass('drag') if q.length
     @
 
+# test
 window.schr = new Scheduler el: '.scheduler'
+$('.btn-select').click ->
+  console.log 'dates', schr.getDateStrings(), schr.getDates()
+  console.log 'hours', schr.getHours()
