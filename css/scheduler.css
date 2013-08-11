@@ -513,10 +513,13 @@
 }
 .scheduler {
   margin: 15px auto;
-  width: 500px;
+  width: 470px;
   -webkit-user-select: none;
   -moz-user-select: moz-none;
   user-select: none;
+}
+.scheduler .alert {
+  font-size: 9.25pt;
 }
 .scheduler .datepickers > div {
   display: inline-block;
@@ -615,6 +618,9 @@
 .scheduler .hours .hour.drag,
 .scheduler .hours .hour.drag:hover {
   background: #9cf;
+}
+.scheduler .actions {
+  margin: 10px 5px;
 }
 .scheduler ul.date-list {
   -webkit-user-select: text;

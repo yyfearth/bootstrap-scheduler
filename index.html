@@ -8,6 +8,12 @@
 </head>
 <body>
 <div class="scheduler">
+    <div class="alert alert-info fade in">
+        <button class="close" data-dismiss="alert">&times;</button>
+        Scroll mouse to navigate through months. Click to toggle select dates. <br/>
+        Dragging to select a range, or pressing alt key while dragging to deselect. <br/>
+        Hourly selection will be applied to all selected dates.
+    </div>
     <div class="datepickers">
         <div class="left"></div>
         <div class="right"></div>
@@ -17,11 +23,6 @@
         <button class="btn btn-today">Today</button>
         <button class="btn btn-reset">Reset</button>
         <button class="btn btn-primary btn-select pull-right">Select</button>
-    </div>
-    <div class="help-block">
-        Scroll mouse wheel to navigate through months. Click to toggle select dates.
-        Dragging to select a range, or pressing alt key while dragging to deselect.
-        Hourly selection will be applied to all selected dates.
     </div>
     <div>Selected Dates <span class="total"></span></div>
     <ul class="date-list"></ul>
