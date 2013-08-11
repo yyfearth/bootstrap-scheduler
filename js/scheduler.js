@@ -15,6 +15,12 @@
       if (opt.selectableFromNow == null) {
         opt.selectableFromNow = true;
       }
+      if (opt.listFormat == null) {
+        opt.listFormat = 'M dd, yyyy';
+      }
+      if (opt.format == null) {
+        opt.format = 'dd/mm/yyyy';
+      }
       this.$el = $(opt.el);
       if (!this.$el.length) {
         throw 'cannot find el ' + opt.el;
@@ -37,8 +43,8 @@
       this._hours = [];
       this._fillHours();
       this._bind();
-      if (opt.selection) {
-        this.setSelection(opt.selection);
+      if (opt.dates) {
+        this.setDates(opt.dates);
       }
       if (opt.disabled) {
         this.setDisabled(opt.disabled);
@@ -166,6 +172,8 @@
     Scheduler.prototype._getDateKey = function(date) {
       return date.toISOString().slice(0, 10);
     };
+
+    Scheduler.prototype._formatDate = $.fn.datepicker.DPGlobal.formatDate;
 
     Scheduler.prototype._betweenDate = function(from, to, pass, func) {
       var cur, p, _getTS;
@@ -329,23 +337,24 @@
     };
 
     Scheduler.prototype._updateList = function() {
-      var count, date, formatDate, frag, hoursTxt, last, selection, spanFrom, _append, _i, _len,
+      var count, date, format, formatDate, frag, hoursTxt, last, selection, spanFrom, _append, _i, _len,
         _this = this;
       if (this.$list.is(':visible')) {
-        selection = this.getSelection();
+        selection = this.getDates();
         count = selection.length;
         if (count) {
           frag = document.createDocumentFragment();
-          formatDate = $.fn.datepicker.DPGlobal.formatDate;
+          formatDate = this._formatDate;
           spanFrom = null;
           last = new Date(0);
           hoursTxt = this._getHoursText();
+          format = this.options.listFormat;
           _append = function(spanFrom, last) {
             var str, str_last;
             if (spanFrom) {
-              str = formatDate(spanFrom, 'M dd, yyyy', 'en');
+              str = formatDate(spanFrom, format, 'en');
               if (spanFrom !== last) {
-                str_last = formatDate(last, 'M dd, yyyy', 'en');
+                str_last = formatDate(last, format, 'en');
                 count = 1 + Math.round((last.getTime() - spanFrom.getTime()) / DAY_SPAN);
                 str += " ~ " + str_last + " (" + count + " days)";
               } else {
@@ -425,7 +434,7 @@
       return this._betweenDate(from, to, true, addOrRemove);
     };
 
-    Scheduler.prototype.getSelection = function() {
+    Scheduler.prototype.getDates = function() {
       var sel;
       sel = this._selected;
       return Object.keys(sel).map(function(key) {
@@ -435,7 +444,16 @@
       });
     };
 
-    Scheduler.prototype.setSelection = function(selection) {
+    Scheduler.prototype.getDateStrings = function() {
+      var format, formatDate;
+      formatDate = this._formatDate;
+      format = this.options.format;
+      return this.getDates().map(function(date) {
+        return formatDate(date, format, 'en');
+      });
+    };
+
+    Scheduler.prototype.setDates = function(selection) {
       this._selected = {};
       if (selection) {
         if (!Array.isArray(selection)) {
@@ -447,7 +465,7 @@
     };
 
     Scheduler.prototype.reset = function() {
-      this.setSelection(this.options.selection);
+      this.setDates(this.options.dates);
       return this.setHours(this.options.hours);
     };
 

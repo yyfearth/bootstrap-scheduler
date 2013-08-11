@@ -7,6 +7,9 @@ class Scheduler
   constructor: (@options = {}) ->
     opt = @options
     opt.selectableFromNow ?= true
+    opt.listFormat ?= 'M dd, yyyy'
+    opt.format ?= 'dd/mm/yyyy'
+
     @$el = $(opt.el)
     throw 'cannot find el ' + opt.el unless @$el.length
     @el = @$el[0]
@@ -31,7 +34,7 @@ class Scheduler
     @_fillHours()
     @_bind()
 
-    @setSelection opt.selection if opt.selection
+    @setDates opt.dates if opt.dates
     @setDisabled opt.disabled if opt.disabled
     @go opt.viewDate
 
@@ -118,6 +121,7 @@ class Scheduler
     @
 
   _getDateKey: (date) -> date.toISOString()[0...10]
+  _formatDate: $.fn.datepicker.DPGlobal.formatDate
   _betweenDate: (from, to, pass, func) ->
     _getTS = (date) ->
       if date.dataset?
@@ -231,20 +235,21 @@ class Scheduler
 
   _updateList: ->
     if @$list.is ':visible'
-      selection = @getSelection()
+      selection = @getDates()
       count = selection.length
       if count
         frag = document.createDocumentFragment()
-        formatDate = $.fn.datepicker.DPGlobal.formatDate
+        formatDate = @_formatDate
         spanFrom = null
         last = new Date 0
         hoursTxt = @_getHoursText()
 
+        format = @options.listFormat
         _append = (spanFrom, last) =>
           if spanFrom
-            str = formatDate spanFrom, 'M dd, yyyy', 'en'
+            str = formatDate spanFrom, format, 'en'
             if spanFrom isnt last
-              str_last = formatDate last, 'M dd, yyyy', 'en'
+              str_last = formatDate last, format, 'en'
               count = 1 + Math.round((last.getTime() - spanFrom.getTime()) / DAY_SPAN)
               str += " ~ #{str_last} (#{count} days)"
             else
@@ -296,12 +301,17 @@ class Scheduler
     @$els.find('.day.drag').removeClass('drag')
     @_betweenDate from, to, true, addOrRemove
 
-  getSelection: ->
+  getDates: ->
     sel = @_selected
     Object.keys(sel).map((key) -> sel[key])
       .sort((a, b) -> a.getTime() - b.getTime())
 
-  setSelection: (selection) ->
+  getDateStrings: ->
+    formatDate = @_formatDate
+    format = @options.format
+    @getDates().map (date) -> formatDate date, format, 'en'
+
+  setDates: (selection) ->
     @_selected = {}
     if selection
       selection = [selection] unless Array.isArray selection
@@ -309,7 +319,7 @@ class Scheduler
     @_changed()
 
   reset: ->
-    @setSelection @options.selection
+    @setDates @options.dates
     @setHours @options.hours
 
   getDisabled: ->
