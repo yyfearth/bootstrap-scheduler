@@ -619,7 +619,7 @@
 .scheduler .hours .hour.drag:hover {
   background: #9cf;
 }
-.scheduler .actions {
+.scheduler .actions .btn {
   margin: 10px 5px;
 }
 .scheduler ul.date-list {
