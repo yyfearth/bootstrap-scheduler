@@ -1,2 +1,2 @@
-instrumented/
-tests/coverage.html
+.idea
+*.map
