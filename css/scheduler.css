@@ -631,3 +631,8 @@
   list-style: disc inside;
   margin-left: 5px;
 }
+.scheduler ul.date-list li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

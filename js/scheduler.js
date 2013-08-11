@@ -360,7 +360,7 @@
               } else {
                 str += ' (1 day)';
               }
-              return $("<li>" + str + " <small>[" + hoursTxt + "]</small></li>").appendTo(frag);
+              return $("<li>" + str + " <small title=\"" + hoursTxt + "\">[" + hoursTxt + "]</small></li>").appendTo(frag);
             }
           };
           this.$total.text("(" + count + " " + (count > 1 ? 'days' : 'day') + " selected)");

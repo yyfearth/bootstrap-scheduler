@@ -254,7 +254,7 @@ class Scheduler
               str += " ~ #{str_last} (#{count} days)"
             else
               str += ' (1 day)'
-            $("<li>#{str} <small>[#{hoursTxt}]</small></li>").appendTo frag
+            $("<li>#{str} <small title=\"#{hoursTxt}\">[#{hoursTxt}]</small></li>").appendTo frag
 
         @$total.text "(#{count} #{if count > 1 then 'days' else 'day'} selected)"
         for date in selection
