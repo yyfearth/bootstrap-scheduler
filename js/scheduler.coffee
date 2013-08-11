@@ -4,11 +4,14 @@ DAY_SPAN = 86400000
 EVENT_DELAY = 60
 
 class Scheduler
-  constructor: (@options = {}) ->
-    opt = @options
-    opt.selectableFromNow ?= true
-    opt.listFormat ?= 'M dd, yyyy'
-    opt.format ?= 'dd/mm/yyyy'
+  defaults:
+    selectableFromNow: true
+    hourlySelectable: true
+    listFormat: 'M dd, yyyy'
+    format: 'dd/mm/yyyy'
+
+  constructor: (opt) ->
+    opt = @options = $.extend {}, @defaults, opt
 
     @$el = $(opt.el)
     throw 'cannot find el ' + opt.el unless @$el.length
@@ -23,6 +26,7 @@ class Scheduler
     @right = @$right.data 'datepicker'
 
     @$hours = @$el.find '.hours'
+    @$hours.hide() unless opt.hourlySelectable
 
     @$list = @$el.find 'ul.date-list'
     @$total = @$el.find '.total'

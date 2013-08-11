@@ -8,19 +8,15 @@
   EVENT_DELAY = 60;
 
   Scheduler = (function() {
-    function Scheduler(options) {
-      var opt;
-      this.options = options != null ? options : {};
-      opt = this.options;
-      if (opt.selectableFromNow == null) {
-        opt.selectableFromNow = true;
-      }
-      if (opt.listFormat == null) {
-        opt.listFormat = 'M dd, yyyy';
-      }
-      if (opt.format == null) {
-        opt.format = 'dd/mm/yyyy';
-      }
+    Scheduler.prototype.defaults = {
+      selectableFromNow: true,
+      hourlySelectable: true,
+      listFormat: 'M dd, yyyy',
+      format: 'dd/mm/yyyy'
+    };
+
+    function Scheduler(opt) {
+      opt = this.options = $.extend({}, this.defaults, opt);
       this.$el = $(opt.el);
       if (!this.$el.length) {
         throw 'cannot find el ' + opt.el;
@@ -36,6 +32,9 @@
       this.left = this.$left.data('datepicker');
       this.right = this.$right.data('datepicker');
       this.$hours = this.$el.find('.hours');
+      if (!opt.hourlySelectable) {
+        this.$hours.hide();
+      }
       this.$list = this.$el.find('ul.date-list');
       this.$total = this.$el.find('.total');
       this._disabled = {};
