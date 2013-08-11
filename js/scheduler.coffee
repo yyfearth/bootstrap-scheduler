@@ -24,6 +24,7 @@ class Scheduler
 
     @_disabled = {}
     @_selected = {}
+    @_hours = []
 
     @_bind()
 
@@ -46,23 +47,60 @@ class Scheduler
         @toggleDate e.date
         @showSelected e.target, 1
 
-    dragging_start = null
+    dragging_start_date = null
     @$els.on 'mousedown', '.day', ->
-      dragging_start = @
+      dragging_start_date = @
       true
     @$els.on 'mouseenter', '.day', (e) =>
-      @highlight dragging_start, e.target if dragging_start
+      @highlight dragging_start_date, e.target if dragging_start_date
       true
     @$els.on 'mouseup', '.day', (e) =>
-      if dragging_start and dragging_start isnt e.target
+      if dragging_start_date and dragging_start_date isnt e.target
         func = if e.altKey then @removeDate else @addDate
-        @selectRange dragging_start, e.target, func.bind @
-      dragging_start = null
+        @selectRange dragging_start_date, e.target, func.bind @
+      dragging_start_date = null
       true
-    $(document.body).on 'mouseup', -> dragging_start = null
     @$el.find('.datepickers').on 'mouseleave', =>
-      @highlight null if dragging_start
+      @highlight null if dragging_start_date
       true
+
+    _hours = @_hours
+    @$hours = @$el.find '.hours'
+
+    @$hours.on 'click', '.hour', (e) =>
+      $el = $(e.target)
+      h = $el.data 'hour'
+      v = _hours[h] = not _hours[h]
+      $el[if v then 'addClass' else 'removeClass'] 'active'
+
+    dragging_start_hour = null
+    @$hours.on 'mousedown', '.hour', ->
+      dragging_start_hour = $(@).data('hour')
+      #console.log 'hour down', @, dragging_start_hour
+      true
+    @$hours.on 'mouseenter', '.hour', (e) =>
+      if dragging_start_hour?
+        end = Number $(e.target).data('hour')
+        @$hours.find('.hour.drag').removeClass 'drag'
+        q = [dragging_start_hour..end].map (h) -> ".hour[data-hour='#{h}']"
+        @$hours.find(q.join ',').addClass 'drag'
+        #console.log 'hour mouseenter', dragging_start_hour, to
+      true
+    @$hours.on 'mouseup', '.hour', (e) =>
+      end = Number $(e.target).data('hour')
+      if dragging_start_hour? and dragging_start_hour isnt end
+        @_hours[h] = not e.altKey for h in [dragging_start_hour..end]
+        @$hours.find('.hour.drag').removeClass 'drag'
+        @_changed()
+      dragging_start_hour = null
+      true
+    @$hours.on 'mouseleave', =>
+      @$hours.find('.hour.drag').removeClass 'drag'
+      true
+      
+    $(document.body).on 'mouseup mouseleave', ->
+      dragging_start_date = dragging_start_hour = null
+
     @$el.find('.btn-today').click => @go()
     @$el.find('.btn-clean').click => @clean()
 
@@ -74,6 +112,7 @@ class Scheduler
         #console.log 'do update', Date.now()
         @showSelected()
         @_updateList()
+        @_updateHours()
       , EVENT_DELAY
 
     @
@@ -144,7 +183,13 @@ class Scheduler
           el.addClass 'active'
         else
           el.removeClass 'active'
-    @
+
+  _updateHours: ->
+    if @$hours.is ':visible'
+      q = @getHours().map((h) -> ".hour[data-hour='#{h}']").join ','
+      console.log q
+      @$hours.find(".hour.active").removeClass 'active'
+      @$hours.find(q).addClass 'active' if q
 
   _updateList: ->
     if @$list.is ':visible'
@@ -178,7 +223,6 @@ class Scheduler
         $("<li>(Empty)</li>").appendTo frag
         @$total.empty()
       @$list.empty().append frag
-    @
 
   _changed: -> @$el.trigger 'change', @
 
@@ -236,6 +280,18 @@ class Scheduler
       disabled = [disabled] unless Array.isArray disabled
       for date in disabled
         @_disabled[@_getDateKey date] = date
+    @_changed()
+
+  getHours: ->
+    hours = []
+    for v, h in @_hours
+      hours.push h if v
+    hours
+
+  setHours: (hours) ->
+    @_hours = []
+    if hours
+      @_hours[h] = true for h in hours
     @_changed()
 
   go: (date = new Date) ->

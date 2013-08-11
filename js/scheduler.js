@@ -33,6 +33,7 @@
       this.$total = this.$el.find('.total');
       this._disabled = {};
       this._selected = {};
+      this._hours = [];
       this._bind();
       if (opt.selection) {
         this.setSelection(opt.selection);
@@ -44,7 +45,7 @@
     }
 
     Scheduler.prototype._bind = function() {
-      var dragging_start, _t,
+      var dragging_start_date, dragging_start_hour, _hours, _t,
         _this = this;
       this.$els.on('mousewheel DOMMouseScroll', function(e) {
         var datepicker;
@@ -65,34 +66,81 @@
           return _this.showSelected(e.target, 1);
         }
       });
-      dragging_start = null;
+      dragging_start_date = null;
       this.$els.on('mousedown', '.day', function() {
-        dragging_start = this;
+        dragging_start_date = this;
         return true;
       });
       this.$els.on('mouseenter', '.day', function(e) {
-        if (dragging_start) {
-          _this.highlight(dragging_start, e.target);
+        if (dragging_start_date) {
+          _this.highlight(dragging_start_date, e.target);
         }
         return true;
       });
       this.$els.on('mouseup', '.day', function(e) {
         var func;
-        if (dragging_start && dragging_start !== e.target) {
+        if (dragging_start_date && dragging_start_date !== e.target) {
           func = e.altKey ? _this.removeDate : _this.addDate;
-          _this.selectRange(dragging_start, e.target, func.bind(_this));
+          _this.selectRange(dragging_start_date, e.target, func.bind(_this));
         }
-        dragging_start = null;
+        dragging_start_date = null;
         return true;
       });
-      $(document.body).on('mouseup', function() {
-        return dragging_start = null;
-      });
       this.$el.find('.datepickers').on('mouseleave', function() {
-        if (dragging_start) {
+        if (dragging_start_date) {
           _this.highlight(null);
         }
         return true;
+      });
+      _hours = this._hours;
+      this.$hours = this.$el.find('.hours');
+      this.$hours.on('click', '.hour', function(e) {
+        var $el, h, v;
+        $el = $(e.target);
+        h = $el.data('hour');
+        v = _hours[h] = !_hours[h];
+        return $el[v ? 'addClass' : 'removeClass']('active');
+      });
+      dragging_start_hour = null;
+      this.$hours.on('mousedown', '.hour', function() {
+        dragging_start_hour = $(this).data('hour');
+        return true;
+      });
+      this.$hours.on('mouseenter', '.hour', function(e) {
+        var end, q, _i, _results;
+        if (dragging_start_hour != null) {
+          end = Number($(e.target).data('hour'));
+          _this.$hours.find('.hour.drag').removeClass('drag');
+          q = (function() {
+            _results = [];
+            for (var _i = dragging_start_hour; dragging_start_hour <= end ? _i <= end : _i >= end; dragging_start_hour <= end ? _i++ : _i--){ _results.push(_i); }
+            return _results;
+          }).apply(this).map(function(h) {
+            return ".hour[data-hour='" + h + "']";
+          });
+          _this.$hours.find(q.join(',')).addClass('drag');
+        }
+        return true;
+      });
+      this.$hours.on('mouseup', '.hour', function(e) {
+        var end, h, _i;
+        end = Number($(e.target).data('hour'));
+        if ((dragging_start_hour != null) && dragging_start_hour !== end) {
+          for (h = _i = dragging_start_hour; dragging_start_hour <= end ? _i <= end : _i >= end; h = dragging_start_hour <= end ? ++_i : --_i) {
+            _this._hours[h] = !e.altKey;
+          }
+          _this.$hours.find('.hour.drag').removeClass('drag');
+          _this._changed();
+        }
+        dragging_start_hour = null;
+        return true;
+      });
+      this.$hours.on('mouseleave', function() {
+        _this.$hours.find('.hour.drag').removeClass('drag');
+        return true;
+      });
+      $(document.body).on('mouseup mouseleave', function() {
+        return dragging_start_date = dragging_start_hour = null;
       });
       this.$el.find('.btn-today').click(function() {
         return _this.go();
@@ -108,7 +156,8 @@
         return _t = setTimeout(function() {
           _t = null;
           _this.showSelected();
-          return _this._updateList();
+          _this._updateList();
+          return _this._updateHours();
         }, EVENT_DELAY);
       });
       return this;
@@ -189,7 +238,7 @@
       datepicker = $.data(target, 'datepicker');
       _selected = this._selected;
       _disabled = this._disabled;
-      $(target).find('.day').each(function() {
+      return $(target).find('.day').each(function() {
         var el, key;
         el = $(this);
         if (!el.is('.disabled')) {
@@ -203,7 +252,20 @@
           }
         }
       });
-      return this;
+    };
+
+    Scheduler.prototype._updateHours = function() {
+      var q;
+      if (this.$hours.is(':visible')) {
+        q = this.getHours().map(function(h) {
+          return ".hour[data-hour='" + h + "']";
+        }).join(',');
+        console.log(q);
+        this.$hours.find(".hour.active").removeClass('active');
+        if (q) {
+          return this.$hours.find(q).addClass('active');
+        }
+      }
     };
 
     Scheduler.prototype._updateList = function() {
@@ -245,9 +307,8 @@
           $("<li>(Empty)</li>").appendTo(frag);
           this.$total.empty();
         }
-        this.$list.empty().append(frag);
+        return this.$list.empty().append(frag);
       }
-      return this;
     };
 
     Scheduler.prototype._changed = function() {
@@ -346,6 +407,31 @@
         for (_i = 0, _len = disabled.length; _i < _len; _i++) {
           date = disabled[_i];
           this._disabled[this._getDateKey(date)] = date;
+        }
+      }
+      return this._changed();
+    };
+
+    Scheduler.prototype.getHours = function() {
+      var h, hours, v, _i, _len, _ref;
+      hours = [];
+      _ref = this._hours;
+      for (h = _i = 0, _len = _ref.length; _i < _len; h = ++_i) {
+        v = _ref[h];
+        if (v) {
+          hours.push(h);
+        }
+      }
+      return hours;
+    };
+
+    Scheduler.prototype.setHours = function(hours) {
+      var h, _i, _len;
+      this._hours = [];
+      if (hours) {
+        for (_i = 0, _len = hours.length; _i < _len; _i++) {
+          h = hours[_i];
+          this._hours[h] = true;
         }
       }
       return this._changed();
