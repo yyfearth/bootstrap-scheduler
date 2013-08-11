@@ -19,6 +19,8 @@ class Scheduler
     @left = @$left.data 'datepicker'
     @right = @$right.data 'datepicker'
 
+    @$hours = @$el.find '.hours'
+
     @$list = @$el.find 'ul.date-list'
     @$total = @$el.find '.total'
 
@@ -26,6 +28,7 @@ class Scheduler
     @_selected = {}
     @_hours = []
 
+    @_fillHours()
     @_bind()
 
     @setSelection opt.selection if opt.selection
@@ -64,14 +67,11 @@ class Scheduler
       @highlight null if dragging_start_date
       true
 
-    _hours = @_hours
-    @$hours = @$el.find '.hours'
-
     @$hours.on 'click', '.hour', (e) =>
       $el = $(e.target)
       h = $el.data 'hour'
-      v = _hours[h] = not _hours[h]
-      $el[if v then 'addClass' else 'removeClass'] 'active'
+      @_hours[h] = not @_hours[h]
+      @_changed()
 
     dragging_start_hour = null
     @$hours.on 'mousedown', '.hour', ->
@@ -84,7 +84,7 @@ class Scheduler
         @$hours.find('.hour.drag').removeClass 'drag'
         q = [dragging_start_hour..end].map (h) -> ".hour[data-hour='#{h}']"
         @$hours.find(q.join ',').addClass 'drag'
-        #console.log 'hour mouseenter', dragging_start_hour, to
+      #console.log 'hour mouseenter', dragging_start_hour, to
       true
     @$hours.on 'mouseup', '.hour', (e) =>
       end = Number $(e.target).data('hour')
@@ -97,12 +97,12 @@ class Scheduler
     @$hours.on 'mouseleave', =>
       @$hours.find('.hour.drag').removeClass 'drag'
       true
-      
+
     $(document.body).on 'mouseup mouseleave', ->
       dragging_start_date = dragging_start_hour = null
 
     @$el.find('.btn-today').click => @go()
-    @$el.find('.btn-clean').click => @clean()
+    @$el.find('.btn-reset').click => @reset()
 
     _t = null
     @$el.on 'change', =>
@@ -187,31 +187,70 @@ class Scheduler
   _updateHours: ->
     if @$hours.is ':visible'
       q = @getHours().map((h) -> ".hour[data-hour='#{h}']").join ','
-      console.log q
       @$hours.find(".hour.active").removeClass 'active'
       @$hours.find(q).addClass 'active' if q
 
+  _getHourText: (h, m) ->
+    throw 'invalid hour ' + h unless 0 <= h < 24
+    if h is 0
+      h = 12
+      p = 'pm'
+    else if h > 12
+      h -= 12
+      p = 'pm'
+    else
+      p = 'am'
+    h = "#{h}:#{m}" if m?
+    h + p
+  _getHoursText: ->
+    hours = @getHours()
+    show_hours = []
+    c = hours.length
+    if 0 < c < 24
+      last = []
+      for h in hours
+        if last.length and h - last[last.length - 1] isnt 1
+          show_hours.push last
+          last = []
+        last.push h
+      show_hours.push last if last.length
+      show_hours = show_hours.map((a) =>
+        "#{@_getHourText a[0]} ~ #{@_getHourText a[a.length - 1], 59}"
+      ).join ', '
+      show_hours
+    else
+      'whole day'
+  _fillHours: ->
+    _getHourText = @_getHourText
+    makeHTML = (hours) ->
+      hours.map((h) ->
+        str = _getHourText h
+        "<td class=\"hour\" data-hour=\"#{h}\" title=\"#{str} ~ #{_getHourText h, 59}\">#{str}</td>"
+      ).join ''
+    @$hours.html "<table><tr><th>AM</th>#{makeHTML [0..11]}</tr><tr><th>PM</th>#{makeHTML [12..23]}</tr></table>"
+
   _updateList: ->
     if @$list.is ':visible'
-      frag = document.createDocumentFragment()
-      formatDate = $.fn.datepicker.DPGlobal.formatDate
-      spanFrom = null
-      last = new Date 0
-
-      _append = (spanFrom, last) =>
-        if spanFrom
-          str = formatDate spanFrom, 'M dd, yyyy', 'en'
-          if spanFrom isnt last
-            str_last = formatDate last, 'M dd, yyyy', 'en'
-            count = 1 + Math.round((last.getTime() - spanFrom.getTime()) / DAY_SPAN)
-            str += " ~ #{str_last} (#{count} days)"
-          else
-            str += ' (1 day)'
-          $("<li>#{str}</li>").appendTo frag
-
       selection = @getSelection()
       count = selection.length
       if count
+        frag = document.createDocumentFragment()
+        formatDate = $.fn.datepicker.DPGlobal.formatDate
+        spanFrom = null
+        last = new Date 0
+        hoursTxt = @_getHoursText()
+
+        _append = (spanFrom, last) =>
+          if spanFrom
+            str = formatDate spanFrom, 'M dd, yyyy', 'en'
+            if spanFrom isnt last
+              str_last = formatDate last, 'M dd, yyyy', 'en'
+              count = 1 + Math.round((last.getTime() - spanFrom.getTime()) / DAY_SPAN)
+              str += " ~ #{str_last} (#{count} days)"
+            else
+              str += ' (1 day)'
+            $("<li>#{str} <small>[#{hoursTxt}]</small></li>").appendTo frag
+
         @$total.text "(#{count} #{if count > 1 then 'days' else 'day'} selected)"
         for date in selection
           if date.getTime() - last.getTime() > DAY_SPAN
@@ -268,7 +307,10 @@ class Scheduler
       selection = [selection] unless Array.isArray selection
       selection.forEach @addDate.bind @
     @_changed()
-  clean: -> @setSelection()
+
+  reset: ->
+    @setSelection @options.selection
+    @setHours @options.hours
 
   getDisabled: ->
     disabled = @_disabled
