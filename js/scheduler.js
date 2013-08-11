@@ -342,8 +342,8 @@
       if (this.$list.is(':visible')) {
         selection = this.getDates();
         count = selection.length;
+        frag = document.createDocumentFragment();
         if (count) {
-          frag = document.createDocumentFragment();
           formatDate = this._formatDate;
           spanFrom = null;
           last = new Date(0);

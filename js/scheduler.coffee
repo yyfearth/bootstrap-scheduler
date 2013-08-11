@@ -237,8 +237,8 @@ class Scheduler
     if @$list.is ':visible'
       selection = @getDates()
       count = selection.length
+      frag = document.createDocumentFragment()
       if count
-        frag = document.createDocumentFragment()
         formatDate = @_formatDate
         spanFrom = null
         last = new Date 0
