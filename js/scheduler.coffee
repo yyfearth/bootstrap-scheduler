@@ -262,7 +262,7 @@ class Scheduler
 
         @$total.text "(#{count} #{if count > 1 then 'days' else 'day'} selected)"
         for date in selection
-          if date.getTime() - last.getTime() > DAY_SPAN
+          if date.getTime() - last.getTime() > DAY_SPAN * 1.5
             _append spanFrom, last
             spanFrom = date
           last = date

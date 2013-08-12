@@ -365,7 +365,7 @@
           this.$total.text("(" + count + " " + (count > 1 ? 'days' : 'day') + " selected)");
           for (_i = 0, _len = selection.length; _i < _len; _i++) {
             date = selection[_i];
-            if (date.getTime() - last.getTime() > DAY_SPAN) {
+            if (date.getTime() - last.getTime() > DAY_SPAN * 1.5) {
               _append(spanFrom, last);
               spanFrom = date;
             }
