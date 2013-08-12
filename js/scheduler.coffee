@@ -128,7 +128,7 @@ class Scheduler
   _formatDate: $.fn.datepicker.DPGlobal.formatDate
   _betweenDate: (from, to, pass, func) ->
     _getTS = (date) ->
-      if date.dataset?
+      if date.dataset? or date.innerHTML?
         new Date($.data date, 'date-key').getTime()
       else if date instanceof Date
         date.getTime()

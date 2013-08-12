@@ -177,7 +177,7 @@
     Scheduler.prototype._betweenDate = function(from, to, pass, func) {
       var cur, p, _getTS;
       _getTS = function(date) {
-        if (date.dataset != null) {
+        if ((date.dataset != null) || (date.innerHTML != null)) {
           return new Date($.data(date, 'date-key')).getTime();
         } else if (date instanceof Date) {
           return date.getTime();
