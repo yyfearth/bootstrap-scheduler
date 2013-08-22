@@ -7,7 +7,22 @@
     <link rel="stylesheet" href="css/scheduler.css"/>
 </head>
 <body>
-<div class="scheduler">
+
+<div style="text-align: center">
+    <input type="text" id="schedule"/>
+    <input type="button" id="scheduler"
+           class="btn btn-primary"
+           data-scheduler-popover="#scheduler_tpl"
+           data-scheduler-display="#schedule"
+           data-dates-input="[name=dates]"
+           data-hours-input="[name=hours]"
+           value="Select Schedule"/>
+    <br/>
+    <input type="text" name="dates"/>
+    <input type="text" name="hours"/>
+</div>
+
+<script id="scheduler_tpl" type="text/html">
     <div class="alert alert-info fade in">
         <button class="close" data-dismiss="alert">&times;</button>
         Scroll mouse to navigate through months. Click to toggle select dates. <br/>
@@ -22,11 +37,38 @@
     <div class="actions">
         <button class="btn btn-today">Today</button>
         <button class="btn btn-reset">Reset</button>
+        <button class="btn btn-close pull-right">Close</button>
         <button class="btn btn-primary btn-select pull-right">Select</button>
     </div>
     <div>Selected Dates&nbsp;<span class="total"></span></div>
-    <ul class="date-list"><li>(Empty)</li></ul>
-</div>
+    <ul class="date-list">
+        <li>(Empty)</li>
+    </ul>
+</script>
+
+<!--div class="scheduler" data-scheduler="on">
+    <div class="alert alert-info fade in">
+        <button class="close" data-dismiss="alert">&times;</button>
+        Scroll mouse to navigate through months. Click to toggle select dates. <br/>
+        Dragging to select a range, or pressing alt key while dragging to deselect. <br/>
+        Hourly selection will be applied to all selected dates.
+    </div>
+    <div class="datepickers">
+        <div class="left"></div>
+        <div class="right"></div>
+    </div>
+    <div class="hours"></div>
+    <div class="actions">
+        <button class="btn btn-today">Today</button>
+        <button class="btn btn-reset">Reset</button>
+        <button class="btn btn-close pull-right">Close</button>
+        <button class="btn btn-primary btn-select pull-right">Select</button>
+    </div>
+    <div>Selected Dates&nbsp;<span class="total"></span></div>
+    <ul class="date-list">
+        <li>(Empty)</li>
+    </ul>
+</div-->
 
 <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
 <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>

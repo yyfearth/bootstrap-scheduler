@@ -1,14 +1,17 @@
 "use strict"
 
+#!import bootstrap-datapicker.js
+
 DAY_SPAN = 86400000
 EVENT_DELAY = 60
+DPGlobal = $.fn.datepicker.DPGlobal
 
 class Scheduler
   defaults:
     selectableFromNow: true
     hourlySelectable: true
-    listFormat: 'M dd, yyyy'
-    format: 'dd/mm/yyyy'
+    displayFormat: 'M dd, yyyy'
+    format: 'mm/dd/yyyy'
 
   constructor: (opt) ->
     opt = @options = $.extend {}, @defaults, opt
@@ -31,6 +34,9 @@ class Scheduler
     @$list = @$el.find 'ul.date-list'
     @$total = @$el.find '.total'
 
+    opt.format = DPGlobal.parseFormat opt.format
+    opt.displayFormat = DPGlobal.parseFormat opt.displayFormat
+
     @_disabled = {}
     @_selected = {}
     @_hours = []
@@ -40,6 +46,7 @@ class Scheduler
 
     @setDates opt.dates if opt.dates
     @setDisabled opt.disabled if opt.disabled
+    @setHours opt.hours if opt.hours
     @go opt.viewDate
 
   _bind: ->
@@ -110,6 +117,7 @@ class Scheduler
 
     @$el.find('.btn-today').click => @go()
     @$el.find('.btn-reset').click => @reset()
+    #@$el.find('.btn-select').click => @$el.trigger 'select', @getDateStrings(), @getHours(), @
 
     _t = null
     @$el.on 'change', =>
@@ -125,7 +133,6 @@ class Scheduler
     @
 
   _getDateKey: (date) -> date.toISOString()[0...10]
-  _formatDate: $.fn.datepicker.DPGlobal.formatDate
   _betweenDate: (from, to, pass, func) ->
     _getTS = (date) ->
       if date.dataset? or date.innerHTML?
@@ -210,7 +217,7 @@ class Scheduler
       p = 'am'
     h = "#{h}:#{m}" if m?
     h + p
-  _getHoursText: ->
+  getHoursDesc: ->
     hours = @getHours()
     show_hours = []
     c = hours.length
@@ -237,25 +244,45 @@ class Scheduler
       ).join ''
     @$hours.html "<table><tr><th>AM</th>#{makeHTML [0..11]}</tr><tr><th>PM</th>#{makeHTML [12..23]}</tr></table>"
 
+  getDatesDescs: (format = @options.displayFormat) ->
+    selection = @getDates()
+    list = []
+    if selection.length
+      spanFrom = null
+      last = new Date 0
+      _append = (spanFrom, last) =>
+        if spanFrom
+          str = DPGlobal.formatDate spanFrom, format, 'en'
+          if spanFrom isnt last
+            str_last = DPGlobal.formatDate last, format, 'en'
+            str += " ~ #{str_last}"
+          list.push str
+
+      for date in selection
+        if date.getTime() - last.getTime() > DAY_SPAN * 1.5
+          _append spanFrom, last
+          spanFrom = date
+        last = date
+      _append spanFrom, last
+    list
   _updateList: ->
     if @$list.is ':visible'
       selection = @getDates()
       count = selection.length
       frag = document.createDocumentFragment()
       if count
-        formatDate = @_formatDate
         spanFrom = null
         last = new Date 0
-        hoursTxt = @_getHoursText()
+        hoursTxt = @getHoursDesc()
 
-        format = @options.listFormat
+        format = @options.displayFormat
         _append = (spanFrom, last) =>
           if spanFrom
-            str = formatDate spanFrom, format, 'en'
+            str = DPGlobal.formatDate spanFrom, format, 'en'
             if spanFrom isnt last
-              str_last = formatDate last, format, 'en'
-              count = 1 + Math.round((last.getTime() - spanFrom.getTime()) / DAY_SPAN)
-              str += " ~ #{str_last} (#{count} days)"
+              str_last = DPGlobal.formatDate last, format, 'en'
+              span = 1 + Math.round((last.getTime() - spanFrom.getTime()) / DAY_SPAN)
+              str += " ~ #{str_last} (#{span} days)"
             else
               str += ' (1 day)'
             $("<li>#{str} <small title=\"#{hoursTxt}\">[#{hoursTxt}]</small></li>").appendTo frag
@@ -286,7 +313,9 @@ class Scheduler
     @_changed()
     @
   addDate: (date) ->
-    throw 'invalid date which is not a Date object' unless date instanceof Date
+    console.log 'add1', date
+    date = DPGlobal.parseDate(date + '', @options.displayFormat, 'en') unless date instanceof Date
+    console.log 'add', date.toISOString()
     key = @_getDateKey date
     if @_disabled.hasOwnProperty key
       console.warn 'date want to add is disabled ' + key
@@ -311,9 +340,8 @@ class Scheduler
       .sort((a, b) -> a.getTime() - b.getTime())
 
   getDateStrings: ->
-    formatDate = @_formatDate
     format = @options.format
-    @getDates().map (date) -> formatDate date, format, 'en'
+    @getDates().map (date) -> DPGlobal.formatDate date, format, 'en'
 
   setDates: (selection) ->
     @_selected = {}
@@ -367,8 +395,71 @@ class Scheduler
       @$els.find(q.join(',')).addClass('drag') if q.length
     @
 
-# test
-window.schr = new Scheduler el: '.scheduler'
-$('.btn-select').click ->
-  console.log 'dates', schr.getDateStrings(), schr.getDates()
-  console.log 'hours', schr.getHours()
+# export
+window.Scheduler = Scheduler
+
+# auto init data api
+$('[data-scheduler]').each -> $(@).data 'scheduler', new Scheduler el: @
+$('[data-scheduler-popover]').each ->
+  $el = $(@)
+  $datesInput = $($el.data 'dates-input')
+  $hoursInput = $($el.data 'hours-input')
+  $display = $($el.data 'scheduler-display')
+  $display.on
+    click: -> $el.click()
+    focus: (e) ->
+      e.preventDefault()
+      $el.focus()
+      false
+  tpl = $($el.data 'scheduler-popover').html()
+  throw 'scheduler-popover must be a query point to html template' unless tpl
+  $el.popover
+    html: true
+    placement: 'bottom'
+    container: 'body'
+    trigger: 'manual'
+    content: tpl
+  popover = $el.data 'popover'
+  # fix width
+  $el.popover 'show'
+  popover.$tip.addClass('scheduler')
+  $el.popover 'hide'
+
+  hideTip = false
+  select = (schr) ->
+    $datesInput.val schr.getDateStrings().join ','
+    if $hoursInput.length
+      hours = schr.getHours()
+      hours = if 0 < hours.length < 24 then hours.join(',') else ''
+      $hoursInput.val hours
+    if $display.length
+      text = schr.getDatesDescs().join '; '
+      text += " (#{schr.getHoursDesc()})"
+      if $display.is 'input'
+        $display.val text
+      else
+        $display.text text
+    $el.popover 'hide'
+    true
+
+  show = ->
+    unless popover.$tip?.is ':visible'
+      $el.popover 'show'
+      $tip = popover.$tip.addClass('scheduler')
+      $tip.find('.btn-close').click -> $el.popover 'hide'
+      if hideTip
+        $tip.find('.alert').hide()
+      else
+        $tip.find('[data-dismiss="alert"]').click -> hideTip = true
+      dates = $datesInput.val()
+      dates = if dates then dates.split(',') else []
+      hours = $hoursInput.val()
+      hours = if hours then hours.split(',') else []
+      scheduler = new Scheduler
+        el: $tip
+        dates: dates
+        hours: hours
+      $el.data 'scheduler', scheduler
+      $tip.find('.btn-select').click -> select scheduler
+
+  $el.click show
