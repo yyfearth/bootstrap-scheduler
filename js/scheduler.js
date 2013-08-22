@@ -160,6 +160,9 @@
       this.$el.find('.btn-reset').click(function() {
         return _this.reset();
       });
+      this.$el.find('.btn-clean').click(function() {
+        return _this.clean();
+      });
       _t = null;
       this.$el.on('change', function() {
         if (_t) {
@@ -340,11 +343,14 @@
       return this.$hours.html("<table><tr><th>AM</th>" + (makeHTML([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])) + "</tr><tr><th>PM</th>" + (makeHTML([12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23])) + "</tr></table>");
     };
 
-    Scheduler.prototype.getDatesDescs = function(format) {
+    Scheduler.prototype.getDatesDescs = function(format, connector) {
       var date, last, list, selection, spanFrom, _append, _i, _len,
         _this = this;
       if (format == null) {
         format = this.options.displayFormat;
+      }
+      if (connector == null) {
+        connector = ' ~ ';
       }
       selection = this.getDates();
       list = [];
@@ -357,7 +363,7 @@
             str = DPGlobal.formatDate(spanFrom, format, 'en');
             if (spanFrom !== last) {
               str_last = DPGlobal.formatDate(last, format, 'en');
-              str += " ~ " + str_last;
+              str += "" + connector + str_last;
             }
             return list.push(str);
           }
@@ -440,11 +446,9 @@
 
     Scheduler.prototype.addDate = function(date) {
       var key;
-      console.log('add1', date);
       if (!(date instanceof Date)) {
         date = DPGlobal.parseDate(date + '', this.options.displayFormat, 'en');
       }
-      console.log('add', date.toISOString());
       key = this._getDateKey(date);
       if (this._disabled.hasOwnProperty(key)) {
         console.warn('date want to add is disabled ' + key);
@@ -471,7 +475,8 @@
         addOrRemove = this.addDate;
       }
       this.$els.find('.day.drag').removeClass('drag');
-      return this._betweenDate(from, to, true, addOrRemove);
+      this._betweenDate(from, to, true, addOrRemove);
+      return this;
     };
 
     Scheduler.prototype.getDates = function() {
@@ -484,12 +489,17 @@
       });
     };
 
-    Scheduler.prototype.getDateStrings = function() {
-      var format;
+    Scheduler.prototype.getDatesValue = function(compact) {
+      var format, list;
       format = this.options.format;
-      return this.getDates().map(function(date) {
-        return DPGlobal.formatDate(date, format, 'en');
-      });
+      if (compact) {
+        list = this.getDatesDescs(format, '-');
+      } else {
+        list = this.getDates().map(function(date) {
+          return DPGlobal.formatDate(date, format, 'en');
+        });
+      }
+      return list.join(',');
     };
 
     Scheduler.prototype.setDates = function(selection) {
@@ -500,12 +510,20 @@
         }
         selection.forEach(this.addDate.bind(this));
       }
-      return this._changed();
+      this._changed();
+      return this;
     };
 
     Scheduler.prototype.reset = function() {
       this.setDates(this.options.dates);
-      return this.setHours(this.options.hours);
+      this.setHours(this.options.hours);
+      return this;
+    };
+
+    Scheduler.prototype.clean = function() {
+      this.setDates();
+      this.setHours();
+      return this;
     };
 
     Scheduler.prototype.getDisabled = function() {
@@ -528,7 +546,8 @@
           this._disabled[this._getDateKey(date)] = date;
         }
       }
-      return this._changed();
+      this._changed();
+      return this;
     };
 
     Scheduler.prototype.getHours = function() {
@@ -597,18 +616,19 @@
   });
 
   $('[data-scheduler-popover]').each(function() {
-    var $datesInput, $display, $el, $hoursInput, hideTip, popover, select, show, tpl;
+    var $datesInput, $display, $el, $hoursInput, compact, hideTip, popover, select, show, tpl;
     $el = $(this);
     $datesInput = $($el.data('dates-input'));
     $hoursInput = $($el.data('hours-input'));
     $display = $($el.data('scheduler-display'));
+    compact = $el.data('scheduler-compact');
     $display.on({
-      click: function() {
-        return $el.click();
-      },
-      focus: function(e) {
+      keydown: function(e) {
         e.preventDefault();
         $el.focus();
+        return false;
+      },
+      paste: function() {
         return false;
       }
     });
@@ -627,10 +647,10 @@
     $el.popover('show');
     popover.$tip.addClass('scheduler');
     $el.popover('hide');
-    hideTip = false;
     select = function(schr) {
       var hours, text, _ref;
-      $datesInput.val(schr.getDateStrings().join(','));
+      $datesInput.data('value', schr.getDatesValue(false));
+      $datesInput.val(schr.getDatesValue(true));
       if ($hoursInput.length) {
         hours = schr.getHours();
         hours = (0 < (_ref = hours.length) && _ref < 24) ? hours.join(',') : '';
@@ -638,7 +658,9 @@
       }
       if ($display.length) {
         text = schr.getDatesDescs().join('; ');
-        text += " (" + (schr.getHoursDesc()) + ")";
+        if (text) {
+          text += " (" + (schr.getHoursDesc()) + ")";
+        }
         if ($display.is('input')) {
           $display.val(text);
         } else {
@@ -648,6 +670,7 @@
       $el.popover('hide');
       return true;
     };
+    hideTip = false;
     show = function() {
       var $tip, dates, hours, scheduler, _ref;
       if (!((_ref = popover.$tip) != null ? _ref.is(':visible') : void 0)) {
@@ -663,7 +686,7 @@
             return hideTip = true;
           });
         }
-        dates = $datesInput.val();
+        dates = $datesInput.data('value') || $datesInput.val();
         dates = dates ? dates.split(',') : [];
         hours = $hoursInput.val();
         hours = hours ? hours.split(',') : [];

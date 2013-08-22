@@ -117,6 +117,7 @@ class Scheduler
 
     @$el.find('.btn-today').click => @go()
     @$el.find('.btn-reset').click => @reset()
+    @$el.find('.btn-clean').click => @clean()
     #@$el.find('.btn-select').click => @$el.trigger 'select', @getDateStrings(), @getHours(), @
 
     _t = null
@@ -244,7 +245,7 @@ class Scheduler
       ).join ''
     @$hours.html "<table><tr><th>AM</th>#{makeHTML [0..11]}</tr><tr><th>PM</th>#{makeHTML [12..23]}</tr></table>"
 
-  getDatesDescs: (format = @options.displayFormat) ->
+  getDatesDescs: (format = @options.displayFormat, connector = ' ~ ') ->
     selection = @getDates()
     list = []
     if selection.length
@@ -255,7 +256,7 @@ class Scheduler
           str = DPGlobal.formatDate spanFrom, format, 'en'
           if spanFrom isnt last
             str_last = DPGlobal.formatDate last, format, 'en'
-            str += " ~ #{str_last}"
+            str += "#{connector}#{str_last}"
           list.push str
 
       for date in selection
@@ -313,9 +314,7 @@ class Scheduler
     @_changed()
     @
   addDate: (date) ->
-    console.log 'add1', date
     date = DPGlobal.parseDate(date + '', @options.displayFormat, 'en') unless date instanceof Date
-    console.log 'add', date.toISOString()
     key = @_getDateKey date
     if @_disabled.hasOwnProperty key
       console.warn 'date want to add is disabled ' + key
@@ -333,15 +332,20 @@ class Scheduler
   selectRange: (from, to, addOrRemove = @addDate) ->
     @$els.find('.day.drag').removeClass('drag')
     @_betweenDate from, to, true, addOrRemove
+    @
 
   getDates: ->
     sel = @_selected
     Object.keys(sel).map((key) -> sel[key])
       .sort((a, b) -> a.getTime() - b.getTime())
 
-  getDateStrings: ->
+  getDatesValue: (compact) ->
     format = @options.format
-    @getDates().map (date) -> DPGlobal.formatDate date, format, 'en'
+    if compact
+      list = @getDatesDescs format, '-'
+    else
+      list = @getDates().map (date) -> DPGlobal.formatDate date, format, 'en'
+    list.join ','
 
   setDates: (selection) ->
     @_selected = {}
@@ -349,10 +353,16 @@ class Scheduler
       selection = [selection] unless Array.isArray selection
       selection.forEach @addDate.bind @
     @_changed()
+    @
 
   reset: ->
     @setDates @options.dates
     @setHours @options.hours
+    @
+  clean: ->
+    @setDates()
+    @setHours()
+    @
 
   getDisabled: ->
     disabled = @_disabled
@@ -365,6 +375,7 @@ class Scheduler
       for date in disabled
         @_disabled[@_getDateKey date] = date
     @_changed()
+    @
 
   getHours: ->
     hours = []
@@ -405,12 +416,17 @@ $('[data-scheduler-popover]').each ->
   $datesInput = $($el.data 'dates-input')
   $hoursInput = $($el.data 'hours-input')
   $display = $($el.data 'scheduler-display')
+  compact = $el.data 'scheduler-compact'
+
+  # make display seems readonly (real readonly will disable required check)
   $display.on
-    click: -> $el.click()
-    focus: (e) ->
+    keydown: (e) ->
       e.preventDefault()
       $el.focus()
       false
+    paste: -> false
+
+  # load template and init popover
   tpl = $($el.data 'scheduler-popover').html()
   throw 'scheduler-popover must be a query point to html template' unless tpl
   $el.popover
@@ -425,16 +441,16 @@ $('[data-scheduler-popover]').each ->
   popover.$tip.addClass('scheduler')
   $el.popover 'hide'
 
-  hideTip = false
   select = (schr) ->
-    $datesInput.val schr.getDateStrings().join ','
+    $datesInput.data 'value', schr.getDatesValue false
+    $datesInput.val schr.getDatesValue true
     if $hoursInput.length
       hours = schr.getHours()
       hours = if 0 < hours.length < 24 then hours.join(',') else ''
       $hoursInput.val hours
     if $display.length
       text = schr.getDatesDescs().join '; '
-      text += " (#{schr.getHoursDesc()})"
+      text += " (#{schr.getHoursDesc()})" if text
       if $display.is 'input'
         $display.val text
       else
@@ -442,6 +458,7 @@ $('[data-scheduler-popover]').each ->
     $el.popover 'hide'
     true
 
+  hideTip = false
   show = ->
     unless popover.$tip?.is ':visible'
       $el.popover 'show'
@@ -451,7 +468,7 @@ $('[data-scheduler-popover]').each ->
         $tip.find('.alert').hide()
       else
         $tip.find('[data-dismiss="alert"]').click -> hideTip = true
-      dates = $datesInput.val()
+      dates = $datesInput.data('value') or $datesInput.val()
       dates = if dates then dates.split(',') else []
       hours = $hoursInput.val()
       hours = if hours then hours.split(',') else []
