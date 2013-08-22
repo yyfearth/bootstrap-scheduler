@@ -287,14 +287,11 @@
       if (!((0 <= h && h < 24))) {
         throw 'invalid hour ' + h;
       }
+      p = h >= 12 ? 'pm' : 'am';
       if (h === 0) {
         h = 12;
-        p = 'pm';
       } else if (h > 12) {
         h -= 12;
-        p = 'pm';
-      } else {
-        p = 'am';
       }
       if (m != null) {
         h = "" + h + ":" + m;

@@ -208,14 +208,11 @@ class Scheduler
 
   _getHourText: (h, m) ->
     throw 'invalid hour ' + h unless 0 <= h < 24
+    p = if h >= 12 then 'pm' else 'am'
     if h is 0
       h = 12
-      p = 'pm'
     else if h > 12
       h -= 12
-      p = 'pm'
-    else
-      p = 'am'
     h = "#{h}:#{m}" if m?
     h + p
   getHoursDesc: ->
