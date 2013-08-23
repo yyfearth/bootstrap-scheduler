@@ -57,68 +57,73 @@ class Scheduler
       datepicker?.go if e.wheelDelta > 0 or e.detail < 0 then -1 else 1
       false
 
-    @$els.on
-      changeMonth: (e) =>
-        @showSelected e.target
-      changeDate: (e) =>
+    @$els.on 'changeMonth', (e) => @showSelected e.target
+
+    unless @options.readonly is true
+
+      @$els.on 'changeDate', (e) =>
         @toggleDate e.date
         @showSelected e.target, 1
 
-    dragging_start_date = null
-    @$els.on 'mousedown', '.day', ->
-      dragging_start_date = @
-      true
-    @$els.on 'mouseenter', '.day', (e) =>
-      @highlight dragging_start_date, e.target if dragging_start_date
-      true
-    @$els.on 'mouseup', '.day', (e) =>
-      if dragging_start_date and dragging_start_date isnt e.target
-        func = if e.altKey then @removeDate else @addDate
-        @selectRange dragging_start_date, e.target, func.bind @
       dragging_start_date = null
-      true
-    @$el.find('.datepickers').on 'mouseleave', =>
-      @highlight null if dragging_start_date
-      true
+      @$els.on 'mousedown', '.day', ->
+        dragging_start_date = @
+        true
+      @$els.on 'mouseenter', '.day', (e) =>
+        @highlight dragging_start_date, e.target if dragging_start_date
+        true
+      @$els.on 'mouseup', '.day', (e) =>
+        if dragging_start_date and dragging_start_date isnt e.target
+          func = if e.altKey then @removeDate else @addDate
+          @selectRange dragging_start_date, e.target, func.bind @
+        dragging_start_date = null
+        true
+      @$el.find('.datepickers').on 'mouseleave', =>
+        @highlight null if dragging_start_date
+        true
 
-    @$hours.on 'click', '.hour', (e) =>
-      $el = $(e.target)
-      h = $el.data 'hour'
-      @_hours[h] = not @_hours[h]
-      @_changed()
-
-    dragging_start_hour = null
-    @$hours.on 'mousedown', '.hour', ->
-      dragging_start_hour = $(@).data('hour')
-      #console.log 'hour down', @, dragging_start_hour
-      true
-    @$hours.on 'mouseenter', '.hour', (e) =>
-      if dragging_start_hour?
-        end = Number $(e.target).data('hour')
-        @$hours.find('.hour.drag').removeClass 'drag'
-        q = [dragging_start_hour..end].map (h) -> ".hour[data-hour='#{h}']"
-        @$hours.find(q.join ',').addClass 'drag'
-      #console.log 'hour mouseenter', dragging_start_hour, to
-      true
-    @$hours.on 'mouseup', '.hour', (e) =>
-      end = Number $(e.target).data('hour')
-      if dragging_start_hour? and dragging_start_hour isnt end
-        @_hours[h] = not e.altKey for h in [dragging_start_hour..end]
-        @$hours.find('.hour.drag').removeClass 'drag'
+      @$hours.on 'click', '.hour', (e) =>
+        $el = $(e.target)
+        h = $el.data 'hour'
+        @_hours[h] = not @_hours[h]
         @_changed()
-      dragging_start_hour = null
-      true
-    @$hours.on 'mouseleave', =>
-      @$hours.find('.hour.drag').removeClass 'drag'
-      true
 
-    $(document.body).on 'mouseup mouseleave', ->
-      dragging_start_date = dragging_start_hour = null
+      dragging_start_hour = null
+      @$hours.on 'mousedown', '.hour', ->
+        dragging_start_hour = $(@).data('hour')
+        #console.log 'hour down', @, dragging_start_hour
+        true
+      @$hours.on 'mouseenter', '.hour', (e) =>
+        if dragging_start_hour?
+          end = Number $(e.target).data('hour')
+          @$hours.find('.hour.drag').removeClass 'drag'
+          q = [dragging_start_hour..end].map (h) -> ".hour[data-hour='#{h}']"
+          @$hours.find(q.join ',').addClass 'drag'
+        #console.log 'hour mouseenter', dragging_start_hour, to
+        true
+      @$hours.on 'mouseup', '.hour', (e) =>
+        end = Number $(e.target).data('hour')
+        if dragging_start_hour? and dragging_start_hour isnt end
+          @_hours[h] = not e.altKey for h in [dragging_start_hour..end]
+          @$hours.find('.hour.drag').removeClass 'drag'
+          @_changed()
+        dragging_start_hour = null
+        true
+      @$hours.on 'mouseleave', =>
+        @$hours.find('.hour.drag').removeClass 'drag'
+        true
+
+      $(document.body).on 'mouseup mouseleave', ->
+        dragging_start_date = dragging_start_hour = null
+
+      @$el.find('.btn-reset').click => @reset()
+      @$el.find('.btn-clean').click => @clean()
+      #@$el.find('.btn-select').click => @$el.trigger 'select', @getDateStrings(), @getHours(), @
+    else
+      @$el.find('.btn-reset,.btn-clean,.btn-select,.btn-close').hide()
+      @$els.on 'changeDate', (e) => @showSelected e.target, 1
 
     @$el.find('.btn-today').click => @go()
-    @$el.find('.btn-reset').click => @reset()
-    @$el.find('.btn-clean').click => @clean()
-    #@$el.find('.btn-select').click => @$el.trigger 'select', @getDateStrings(), @getHours(), @
 
     _t = null
     @$el.on 'change', =>
@@ -131,6 +136,12 @@ class Scheduler
         @_updateHours()
       , EVENT_DELAY
 
+    if Scheduler._schr_dismiss_tips ||= sessionStorage._schr_dismiss_tips
+      @$el.find('.alert').remove()
+    else
+      @$el.on 'click', '[data-dismiss="alert"]', =>
+        sessionStorage._schr_dismiss_tips = Scheduler._schr_dismiss_tips = true
+        true
     @
 
   _getDateKey: (date) -> date.toISOString()[0...10]
@@ -407,13 +418,26 @@ class Scheduler
 window.Scheduler = Scheduler
 
 # auto init data api
-$('[data-scheduler]').each -> $(@).data 'scheduler', new Scheduler el: @
+_splitValues = (array) -> if array then array.split(',') else []
+
+$('[data-scheduler]').each ->
+  $el = $(@)
+  dates = _splitValues $el.data 'dates'
+  hours = _splitValues $el.data 'hours'
+  disabled = _splitValues $el.data 'disabled-dates'
+  readonly = $el.data 'readonly'
+
+  el = @
+  $el.data 'scheduler', new Scheduler {el, dates, hours, disabled, readonly}
+
 $('[data-scheduler-popover]').each ->
   $el = $(@)
   $datesInput = $($el.data 'dates-input')
   $hoursInput = $($el.data 'hours-input')
   $display = $($el.data 'scheduler-display')
   compact = $el.data 'scheduler-compact'
+  disabled = _splitValues $el.data 'disabled-dates'
+  readonly = $el.data 'readonly'
 
   # make display seems readonly (real readonly will disable required check)
   $display.on
@@ -455,24 +479,15 @@ $('[data-scheduler-popover]').each ->
     $el.popover 'hide'
     true
 
-  hideTip = false
   show = ->
     unless popover.$tip?.is ':visible'
       $el.popover 'show'
       $tip = popover.$tip.addClass('scheduler')
       $tip.find('.btn-close').click -> $el.popover 'hide'
-      if hideTip
-        $tip.find('.alert').hide()
-      else
-        $tip.find('[data-dismiss="alert"]').click -> hideTip = true
-      dates = $datesInput.data('value') or $datesInput.val()
-      dates = if dates then dates.split(',') else []
-      hours = $hoursInput.val()
-      hours = if hours then hours.split(',') else []
-      scheduler = new Scheduler
-        el: $tip
-        dates: dates
-        hours: hours
+      dates = _splitValues $datesInput.data('value') or $datesInput.val()
+      hours = _splitValues $hoursInput.val()
+      el = $tip
+      scheduler = new Scheduler {el, dates, hours, disabled, readonly}
       $el.data 'scheduler', scheduler
       $tip.find('.btn-select').click -> select scheduler
 
